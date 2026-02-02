@@ -16,12 +16,13 @@ import { Search, Filter, SortAsc } from 'lucide-react';
 interface LoanListProps {
   loans: Loan[];
   onSelectLoan: (loan: Loan) => void;
+  onExtendLoan?: (id: string) => void;
 }
 
 type SortOption = 'newest' | 'oldest' | 'amount-high' | 'amount-low' | 'due-soon';
 type FilterOption = 'all' | 'active' | 'overdue' | 'closed' | 'partial';
 
-export function LoanList({ loans, onSelectLoan }: LoanListProps) {
+export function LoanList({ loans, onSelectLoan, onExtendLoan }: LoanListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
@@ -142,6 +143,7 @@ export function LoanList({ loans, onSelectLoan }: LoanListProps) {
               key={calc.loan.id}
               calculation={calc}
               onClick={() => onSelectLoan(calc.loan)}
+              onExtend={onExtendLoan}
             />
           ))
         )}

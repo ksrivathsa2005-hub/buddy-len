@@ -3,16 +3,20 @@ import { formatCurrency, formatDateRelative } from '@/utils/loanCalculations';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import { User, Phone, Calendar, ChevronRight } from 'lucide-react';
+import { User, Phone, Calendar, ChevronRight, CalendarPlus } from 'lucide-react';
 
 interface LoanCardProps {
   calculation: LoanCalculation;
   onClick: () => void;
+  onExtend?: (id: string) => void;
 }
 
-export function LoanCard({ calculation, onClick }: LoanCardProps) {
-  const { loan, status, remainingBalance, totalPayable, daysOverdue, extraInterest } = calculation;
+export function LoanCard({ calculation, onClick, onExtend }: LoanCardProps) {
+  const { loan, status, remainingBalance, totalPayable, daysOverdue, extraInterest, totalPaid } = calculation;
+
+  const paymentProgress = totalPayable > 0 ? (totalPaid / totalPayable) * 100 : 0;
 
   const cardGlow = {
     'active': '',
@@ -20,6 +24,11 @@ export function LoanCard({ calculation, onClick }: LoanCardProps) {
     'overdue': 'glow-overdue',
     'partially-paid': '',
     'closed': '',
+  };
+
+  const handleExtend = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onExtend?.(loan.id);
   };
 
   return (
@@ -92,10 +101,41 @@ export function LoanCard({ calculation, onClick }: LoanCardProps) {
                 Fully collected
               </div>
             )}
+            
+            {/* Extend button - only for non-closed loans */}
+            {status !== 'closed' && onExtend && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2 text-xs h-7 gap-1"
+                onClick={handleExtend}
+              >
+                <CalendarPlus className="h-3 w-3" />
+                Extend 30d
+              </Button>
+            )}
           </div>
 
           {/* Arrow indicator */}
           <ChevronRight className="h-5 w-5 text-muted-foreground/50 group-hover:text-foreground transition-colors shrink-0" />
+        </div>
+
+        {/* Payment Progress Bar */}
+        <div className="mt-4 space-y-1.5">
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>Payment Progress</span>
+            <span>{Math.round(paymentProgress)}% collected</span>
+          </div>
+          <Progress 
+            value={paymentProgress} 
+            className={cn(
+              "h-2",
+              status === 'closed' && "[&>div]:bg-status-active",
+              status === 'overdue' && "[&>div]:bg-status-overdue",
+              status === 'partially-paid' && "[&>div]:bg-status-partial",
+              (status === 'active' || status === 'due-today') && "[&>div]:bg-primary"
+            )}
+          />
         </div>
       </CardContent>
     </Card>
