@@ -1,146 +1,149 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Loan, Payment } from '@/types/loan';
 import { generateId, calculateDueDate } from '@/utils/loanCalculations';
-
-const STORAGE_KEY = 'loan-ledger-data';
+import { loansApi } from '@/lib/api';
 
 interface UseLoanReturn {
   loans: Loan[];
-  addLoan: (data: Omit<Loan, 'id' | 'payments' | 'createdAt' | 'updatedAt' | 'dueDate'>) => Loan;
-  updateLoan: (id: string, data: Partial<Loan>) => void;
-  deleteLoan: (id: string) => void;
-  extendLoan: (id: string) => void;
-  closeLoan: (id: string) => void;
-  addPayment: (loanId: string, amount: number, date: string, notes?: string) => Payment;
-  deletePayment: (loanId: string, paymentId: string) => void;
+  addLoan: (data: Omit<Loan, 'id' | 'payments' | 'createdAt' | 'updatedAt' | 'dueDate'>) => Promise<Loan>;
+  updateLoan: (id: string, data: Partial<Loan>) => Promise<void>;
+  deleteLoan: (id: string) => Promise<void>;
+  extendLoan: (id: string) => Promise<void>;
+  closeLoan: (id: string) => Promise<void>;
+  addPayment: (loanId: string, amount: number, date: string, notes?: string) => Promise<Payment>;
+  deletePayment: (loanId: string, paymentId: string) => Promise<void>;
   getLoan: (id: string) => Loan | undefined;
   isLoading: boolean;
+  error: string | null;
 }
 
 export function useLoans(): UseLoanReturn {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load from localStorage on mount
+  // Load from database on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setLoans(parsed);
-      }
-    } catch (error) {
-      console.error('Failed to load loans from storage:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Save to localStorage whenever loans change
-  useEffect(() => {
-    if (!isLoading) {
+    const loadLoans = async () => {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(loans));
-      } catch (error) {
-        console.error('Failed to save loans to storage:', error);
+        setIsLoading(true);
+        setError(null);
+        const data = await loansApi.getAll();
+        setLoans(data.map(convertFromDb));
+      } catch (err) {
+        console.error('Failed to load loans from database:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load loans');
+      } finally {
+        setIsLoading(false);
       }
-    }
-  }, [loans, isLoading]);
-
-  const addLoan = useCallback((data: Omit<Loan, 'id' | 'payments' | 'createdAt' | 'updatedAt' | 'dueDate'>): Loan => {
-    const now = new Date().toISOString();
-    const newLoan: Loan = {
-      ...data,
-      id: generateId(),
-      dueDate: calculateDueDate(data.startDate),
-      payments: [],
-      createdAt: now,
-      updatedAt: now,
     };
-    
-    setLoans(prev => [newLoan, ...prev]);
-    return newLoan;
+
+    loadLoans();
   }, []);
 
-  const updateLoan = useCallback((id: string, data: Partial<Loan>) => {
-    setLoans(prev => prev.map(loan => {
-      if (loan.id !== id) return loan;
-      
-      const updated = {
-        ...loan,
+  const addLoan = useCallback(async (data: Omit<Loan, 'id' | 'payments' | 'createdAt' | 'updatedAt' | 'dueDate'>): Promise<Loan> => {
+    try {
+      const dbLoan = await loansApi.create({
         ...data,
-        updatedAt: new Date().toISOString(),
-      };
-      
-      // Recalculate due date if start date changed
-      if (data.startDate && data.startDate !== loan.startDate) {
-        updated.dueDate = calculateDueDate(data.startDate);
-      }
-      
-      return updated;
-    }));
+        dueDate: calculateDueDate(data.startDate),
+      });
+      const newLoan = convertFromDb(dbLoan);
+      setLoans(prev => [newLoan, ...prev]);
+      return newLoan;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add loan');
+      throw err;
+    }
   }, []);
 
-  const deleteLoan = useCallback((id: string) => {
-    setLoans(prev => prev.filter(loan => loan.id !== id));
+  const updateLoan = useCallback(async (id: string, data: Partial<Loan>) => {
+    try {
+      const dbLoan = await loansApi.update(id, data);
+      setLoans(prev => prev.map(loan => loan.id === id ? convertFromDb(dbLoan) : loan));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update loan');
+      throw err;
+    }
   }, []);
 
-  const extendLoan = useCallback((id: string) => {
-    setLoans(prev => prev.map(loan => {
-      if (loan.id !== id) return loan;
+  const deleteLoan = useCallback(async (id: string) => {
+    try {
+      await loansApi.delete(id);
+      setLoans(prev => prev.filter(loan => loan.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete loan');
+      throw err;
+    }
+  }, []);
+
+  const extendLoan = useCallback(async (id: string) => {
+    try {
+      const loan = loans.find(l => l.id === id);
+      if (!loan) return;
+      
       const currentDueDate = new Date(loan.dueDate);
       const newDueDate = new Date(currentDueDate);
       newDueDate.setDate(newDueDate.getDate() + 30);
-      return {
-        ...loan,
-        dueDate: newDueDate.toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-    }));
+      
+      const dbLoan = await loansApi.update(id, { dueDate: newDueDate.toISOString() });
+      setLoans(prev => prev.map(l => l.id === id ? convertFromDb(dbLoan) : l));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to extend loan');
+      throw err;
+    }
+  }, [loans]);
+
+  const closeLoan = useCallback(async (id: string) => {
+    try {
+      const dbLoan = await loansApi.update(id, { closedAt: new Date().toISOString() });
+      setLoans(prev => prev.map(l => l.id === id ? convertFromDb(dbLoan) : l));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to close loan');
+      throw err;
+    }
   }, []);
 
-  const closeLoan = useCallback((id: string) => {
-    setLoans(prev => prev.map(loan => {
-      if (loan.id !== id) return loan;
-      return {
-        ...loan,
-        closedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-    }));
+  const addPayment = useCallback(async (loanId: string, amount: number, date: string, notes?: string): Promise<Payment> => {
+    try {
+      const dbPayment = await loansApi.addPayment(loanId, {
+        loanId,
+        amount,
+        date,
+        notes,
+      });
+      
+      const payment = convertPaymentFromDb(dbPayment);
+      
+      // Update the local loan's payments
+      setLoans(prev => prev.map(loan => {
+        if (loan.id !== loanId) return loan;
+        return {
+          ...loan,
+          payments: [...loan.payments, payment],
+        };
+      }));
+
+      return payment;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add payment');
+      throw err;
+    }
   }, []);
 
-  const addPayment = useCallback((loanId: string, amount: number, date: string, notes?: string): Payment => {
-    const payment: Payment = {
-      id: generateId(),
-      loanId,
-      amount,
-      date,
-      notes,
-      createdAt: new Date().toISOString(),
-    };
-
-    setLoans(prev => prev.map(loan => {
-      if (loan.id !== loanId) return loan;
-      return {
-        ...loan,
-        payments: [...loan.payments, payment],
-        updatedAt: new Date().toISOString(),
-      };
-    }));
-
-    return payment;
-  }, []);
-
-  const deletePayment = useCallback((loanId: string, paymentId: string) => {
-    setLoans(prev => prev.map(loan => {
-      if (loan.id !== loanId) return loan;
-      return {
-        ...loan,
-        payments: loan.payments.filter(p => p.id !== paymentId),
-        updatedAt: new Date().toISOString(),
-      };
-    }));
+  const deletePayment = useCallback(async (loanId: string, paymentId: string) => {
+    try {
+      await loansApi.deletePayment(paymentId);
+      setLoans(prev => prev.map(loan => {
+        if (loan.id !== loanId) return loan;
+        return {
+          ...loan,
+          payments: loan.payments.filter(p => p.id !== paymentId),
+        };
+      }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete payment');
+      throw err;
+    }
   }, []);
 
   const getLoan = useCallback((id: string): Loan | undefined => {
@@ -158,5 +161,34 @@ export function useLoans(): UseLoanReturn {
     deletePayment,
     getLoan,
     isLoading,
+    error,
+  };
+}
+
+// Helper functions to convert between DB format (snake_case) and app format (camelCase)
+function convertFromDb(dbLoan: any): Loan {
+  return {
+    id: dbLoan.id,
+    borrower: dbLoan.borrower,
+    principal: dbLoan.principal,
+    fixedInterest: dbLoan.fixed_interest,
+    startDate: dbLoan.start_date,
+    dueDate: dbLoan.due_date,
+    notes: dbLoan.notes,
+    payments: (dbLoan.payments || []).map(convertPaymentFromDb),
+    closedAt: dbLoan.closed_at,
+    createdAt: dbLoan.created_at,
+    updatedAt: dbLoan.updated_at,
+  };
+}
+
+function convertPaymentFromDb(dbPayment: any): Payment {
+  return {
+    id: dbPayment.id,
+    loanId: dbPayment.loan_id,
+    amount: dbPayment.amount,
+    date: dbPayment.date,
+    notes: dbPayment.notes,
+    createdAt: dbPayment.created_at,
   };
 }

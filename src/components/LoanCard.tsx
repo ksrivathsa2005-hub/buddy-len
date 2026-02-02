@@ -14,9 +14,16 @@ interface LoanCardProps {
 }
 
 export function LoanCard({ calculation, onClick, onExtend }: LoanCardProps) {
-  const { loan, status, remainingBalance, totalPayable, daysOverdue, extraInterest, totalPaid } = calculation;
-
-  const paymentProgress = totalPayable > 0 ? (totalPaid / totalPayable) * 100 : 0;
+  const { loan, status, remainingBalance, totalPayable, daysOverdue, extraInterest, totalPaid, daysActive } = calculation;
+  
+  // Days elapsed progress (on 30-day scale)
+  const daysProgressPercent = status === 'overdue' 
+    ? 100 
+    : Math.min((daysActive / 30) * 100, 100);
+  
+  const daysProgressColor = status === 'overdue' 
+    ? 'bg-status-overdue' 
+    : 'bg-yellow-500';
 
   const cardGlow = {
     'active': '',
@@ -120,22 +127,29 @@ export function LoanCard({ calculation, onClick, onExtend }: LoanCardProps) {
           <ChevronRight className="h-5 w-5 text-muted-foreground/50 group-hover:text-foreground transition-colors shrink-0" />
         </div>
 
-        {/* Payment Progress Bar */}
-        <div className="mt-4 space-y-1.5">
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Payment Progress</span>
-            <span>{Math.round(paymentProgress)}% collected</span>
+        {/* Time Elapsed Progress Bar */}
+        <div className="mt-4">
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Time Elapsed</span>
+              <span className={cn(
+                "font-medium",
+                status === 'overdue' && 'text-status-overdue',
+                status !== 'overdue' && 'text-yellow-600'
+              )}>
+                {daysActive} / 30 days
+              </span>
+            </div>
+            <div className="h-2 bg-secondary rounded-full overflow-hidden">
+              <div
+                className={cn(
+                  "h-full rounded-full transition-all",
+                  daysProgressColor
+                )}
+                style={{ width: `${daysProgressPercent}%` }}
+              />
+            </div>
           </div>
-          <Progress 
-            value={paymentProgress} 
-            className={cn(
-              "h-2",
-              status === 'closed' && "[&>div]:bg-status-active",
-              status === 'overdue' && "[&>div]:bg-status-overdue",
-              status === 'partially-paid' && "[&>div]:bg-status-partial",
-              (status === 'active' || status === 'due-today') && "[&>div]:bg-primary"
-            )}
-          />
         </div>
       </CardContent>
     </Card>

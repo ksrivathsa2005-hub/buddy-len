@@ -37,101 +37,149 @@ const Index = () => {
   const summary = useMemo(() => calculateDashboardSummary(loans), [loans]);
 
   // Handle adding a new loan
-  const handleAddLoan = (data: {
+  const handleAddLoan = async (data: {
     borrower: { name: string; phone?: string };
     principal: number;
     fixedInterest: number;
     startDate: string;
     notes?: string;
   }) => {
-    if (editingLoan) {
-      // Update existing loan
-      updateLoan(editingLoan.id, {
-        borrower: data.borrower,
-        principal: data.principal,
-        fixedInterest: data.fixedInterest,
-        startDate: data.startDate,
-        notes: data.notes,
-      });
-      toast({
-        title: 'Loan Updated',
-        description: `Loan to ${data.borrower.name} has been updated.`,
-      });
-      // Update selected loan if viewing
-      if (selectedLoan?.id === editingLoan.id) {
-        const updated = loans.find(l => l.id === editingLoan.id);
-        if (updated) setSelectedLoan({ ...updated, ...data });
+    try {
+      if (editingLoan) {
+        // Update existing loan
+        await updateLoan(editingLoan.id, {
+          borrower: data.borrower,
+          principal: data.principal,
+          fixedInterest: data.fixedInterest,
+          startDate: data.startDate,
+          notes: data.notes,
+        });
+        toast({
+          title: 'Loan Updated',
+          description: `Loan to ${data.borrower.name} has been updated.`,
+        });
+        // Update selected loan if viewing
+        if (selectedLoan?.id === editingLoan.id) {
+          const updated = loans.find(l => l.id === editingLoan.id);
+          if (updated) setSelectedLoan({ ...updated, ...data });
+        }
+      } else {
+        // Add new loan
+        await addLoan(data);
+        toast({
+          title: 'Loan Added',
+          description: `New loan of ₹${data.principal.toLocaleString()} to ${data.borrower.name} created.`,
+        });
       }
-    } else {
-      // Add new loan
-      const newLoan = addLoan(data);
+      setEditingLoan(null);
+    } catch (error) {
       toast({
-        title: 'Loan Added',
-        description: `New loan of ₹${data.principal.toLocaleString()} to ${data.borrower.name} created.`,
+        title: 'Error',
+        description: 'Failed to save loan. Please try again.',
+        variant: 'destructive',
       });
     }
-    setEditingLoan(null);
   };
 
   // Handle adding a payment
-  const handleAddPayment = (amount: number, date: string, notes?: string) => {
-    if (!selectedLoan) return;
-    addPayment(selectedLoan.id, amount, date, notes);
-    toast({
-      title: 'Payment Recorded',
-      description: `₹${amount.toLocaleString()} payment from ${selectedLoan.borrower.name} recorded.`,
-    });
-    // Refresh selected loan
-    const updated = loans.find(l => l.id === selectedLoan.id);
-    if (updated) setSelectedLoan(updated);
+  const handleAddPayment = async (amount: number, date: string, notes?: string) => {
+    try {
+      if (!selectedLoan) return;
+      await addPayment(selectedLoan.id, amount, date, notes);
+      toast({
+        title: 'Payment Recorded',
+        description: `₹${amount.toLocaleString()} payment from ${selectedLoan.borrower.name} recorded.`,
+      });
+      // Refresh selected loan
+      const updated = loans.find(l => l.id === selectedLoan.id);
+      if (updated) setSelectedLoan(updated);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to record payment. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   // Handle closing a loan
-  const handleCloseLoan = () => {
-    if (!selectedLoan) return;
-    closeLoan(selectedLoan.id);
-    toast({
-      title: 'Loan Closed',
-      description: `Loan to ${selectedLoan.borrower.name} has been marked as closed.`,
-    });
-    setSelectedLoan(null);
+  const handleCloseLoan = async () => {
+    try {
+      if (!selectedLoan) return;
+      await closeLoan(selectedLoan.id);
+      toast({
+        title: 'Loan Closed',
+        description: `Loan to ${selectedLoan.borrower.name} has been marked as closed.`,
+      });
+      setSelectedLoan(null);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to close loan. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   // Handle deleting a loan
-  const handleDeleteLoan = () => {
-    if (!selectedLoan) return;
-    const name = selectedLoan.borrower.name;
-    deleteLoan(selectedLoan.id);
-    toast({
-      title: 'Loan Deleted',
-      description: `Loan to ${name} has been permanently deleted.`,
-      variant: 'destructive',
-    });
-    setSelectedLoan(null);
+  const handleDeleteLoan = async () => {
+    try {
+      if (!selectedLoan) return;
+      const name = selectedLoan.borrower.name;
+      await deleteLoan(selectedLoan.id);
+      toast({
+        title: 'Loan Deleted',
+        description: `Loan to ${name} has been permanently deleted.`,
+        variant: 'destructive',
+      });
+      setSelectedLoan(null);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete loan. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   // Handle extending a loan by 30 days
-  const handleExtendLoan = (id: string) => {
-    const loan = loans.find(l => l.id === id);
-    if (!loan) return;
-    extendLoan(id);
-    toast({
-      title: 'Loan Extended',
-      description: `Loan to ${loan.borrower.name} extended by 30 days.`,
-    });
+  const handleExtendLoan = async (id: string) => {
+    try {
+      const loan = loans.find(l => l.id === id);
+      if (!loan) return;
+      await extendLoan(id);
+      toast({
+        title: 'Loan Extended',
+        description: `Loan to ${loan.borrower.name} extended by 30 days.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to extend loan. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   // Handle deleting a payment
-  const handleDeletePayment = (paymentId: string) => {
-    if (!selectedLoan) return;
-    deletePayment(selectedLoan.id, paymentId);
-    toast({
-      title: 'Payment Deleted',
-      description: 'Payment has been removed.',
-    });
-    // Refresh selected loan
-    const updated = loans.find(l => l.id === selectedLoan.id);
-    if (updated) setSelectedLoan(updated);
+  const handleDeletePayment = async (paymentId: string) => {
+    try {
+      if (!selectedLoan) return;
+      await deletePayment(selectedLoan.id, paymentId);
+      toast({
+        title: 'Payment Deleted',
+        description: 'Payment has been removed.',
+      });
+      // Refresh selected loan
+      const updated = loans.find(l => l.id === selectedLoan.id);
+      if (updated) setSelectedLoan(updated);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete payment. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   // Handle selecting a loan for detail view
