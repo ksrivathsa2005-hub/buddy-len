@@ -18,6 +18,7 @@ const Index = () => {
     addLoan, 
     updateLoan, 
     deleteLoan, 
+    extendLoan,
     closeLoan, 
     addPayment, 
     deletePayment,
@@ -107,6 +108,17 @@ const Index = () => {
       variant: 'destructive',
     });
     setSelectedLoan(null);
+  };
+
+  // Handle extending a loan by 30 days
+  const handleExtendLoan = (id: string) => {
+    const loan = loans.find(l => l.id === id);
+    if (!loan) return;
+    extendLoan(id);
+    toast({
+      title: 'Loan Extended',
+      description: `Loan to ${loan.borrower.name} extended by 30 days.`,
+    });
   };
 
   // Handle deleting a payment
@@ -212,7 +224,8 @@ const Index = () => {
                   </div>
                   <LoanList 
                     loans={loans.slice(0, 3)} 
-                    onSelectLoan={handleSelectLoan} 
+                    onSelectLoan={handleSelectLoan}
+                    onExtendLoan={handleExtendLoan}
                   />
                 </div>
               )}
@@ -236,7 +249,7 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="loans" className="animate-fade-in">
-              <LoanList loans={loans} onSelectLoan={handleSelectLoan} />
+              <LoanList loans={loans} onSelectLoan={handleSelectLoan} onExtendLoan={handleExtendLoan} />
             </TabsContent>
           </Tabs>
         )}

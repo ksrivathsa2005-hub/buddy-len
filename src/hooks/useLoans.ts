@@ -9,6 +9,7 @@ interface UseLoanReturn {
   addLoan: (data: Omit<Loan, 'id' | 'payments' | 'createdAt' | 'updatedAt' | 'dueDate'>) => Loan;
   updateLoan: (id: string, data: Partial<Loan>) => void;
   deleteLoan: (id: string) => void;
+  extendLoan: (id: string) => void;
   closeLoan: (id: string) => void;
   addPayment: (loanId: string, amount: number, date: string, notes?: string) => Payment;
   deletePayment: (loanId: string, paymentId: string) => void;
@@ -84,6 +85,20 @@ export function useLoans(): UseLoanReturn {
     setLoans(prev => prev.filter(loan => loan.id !== id));
   }, []);
 
+  const extendLoan = useCallback((id: string) => {
+    setLoans(prev => prev.map(loan => {
+      if (loan.id !== id) return loan;
+      const currentDueDate = new Date(loan.dueDate);
+      const newDueDate = new Date(currentDueDate);
+      newDueDate.setDate(newDueDate.getDate() + 30);
+      return {
+        ...loan,
+        dueDate: newDueDate.toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    }));
+  }, []);
+
   const closeLoan = useCallback((id: string) => {
     setLoans(prev => prev.map(loan => {
       if (loan.id !== id) return loan;
@@ -137,6 +152,7 @@ export function useLoans(): UseLoanReturn {
     addLoan,
     updateLoan,
     deleteLoan,
+    extendLoan,
     closeLoan,
     addPayment,
     deletePayment,
