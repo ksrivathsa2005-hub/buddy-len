@@ -2,95 +2,148 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* LoanLedger Design System
+   A warm, trustworthy palette for personal finance tracking.
+   All colors in HSL for consistency.
 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Warm cream background */
+    --background: 40 33% 98%;
+    --foreground: 220 25% 10%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Card surfaces - slightly warmer than pure white */
+    --card: 40 25% 99%;
+    --card-foreground: 220 25% 10%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 40 25% 99%;
+    --popover-foreground: 220 25% 10%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - Deep slate blue, professional and trustworthy */
+    --primary: 220 30% 20%;
+    --primary-foreground: 40 33% 98%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary - Warm gray */
+    --secondary: 220 10% 94%;
+    --secondary-foreground: 220 25% 25%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Muted - Soft warm gray */
+    --muted: 220 10% 92%;
+    --muted-foreground: 220 10% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent - Soft teal for interactive elements */
+    --accent: 175 45% 92%;
+    --accent-foreground: 175 45% 25%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Destructive - Soft rose for overdue/warnings */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 220 30% 20%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* Custom semantic colors for loan states */
+    --status-active: 152 60% 42%;
+    --status-active-foreground: 152 60% 98%;
+    --status-active-bg: 152 60% 95%;
+    
+    --status-due-today: 38 92% 50%;
+    --status-due-today-foreground: 38 92% 15%;
+    --status-due-today-bg: 38 80% 94%;
+    
+    --status-overdue: 0 72% 51%;
+    --status-overdue-foreground: 0 0% 100%;
+    --status-overdue-bg: 0 72% 96%;
+    
+    --status-closed: 220 10% 50%;
+    --status-closed-foreground: 220 10% 98%;
+    --status-closed-bg: 220 10% 94%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    --status-partial: 262 60% 55%;
+    --status-partial-foreground: 262 60% 98%;
+    --status-partial-bg: 262 60% 96%;
 
-    --sidebar-primary: 240 5.9% 10%;
+    /* Money colors */
+    --money-positive: 152 60% 35%;
+    --money-negative: 0 72% 51%;
+    --money-pending: 38 92% 45%;
 
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar (keeping defaults) */
+    --sidebar-background: 40 25% 97%;
+    --sidebar-foreground: 220 25% 25%;
+    --sidebar-primary: 220 30% 20%;
+    --sidebar-primary-foreground: 40 33% 98%;
+    --sidebar-accent: 175 45% 92%;
+    --sidebar-accent-foreground: 175 45% 25%;
+    --sidebar-border: 220 15% 88%;
+    --sidebar-ring: 220 30% 20%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 220 25% 8%;
+    --foreground: 40 25% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 25% 10%;
+    --card-foreground: 40 25% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 25% 10%;
+    --popover-foreground: 40 25% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 40 25% 95%;
+    --primary-foreground: 220 25% 10%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 220 20% 18%;
+    --secondary-foreground: 40 25% 90%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 220 20% 18%;
+    --muted-foreground: 220 10% 60%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 175 45% 20%;
+    --accent-foreground: 175 45% 90%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 40 25% 80%;
+
+    --status-active: 152 60% 45%;
+    --status-active-foreground: 152 60% 10%;
+    --status-active-bg: 152 60% 15%;
+    
+    --status-due-today: 38 80% 55%;
+    --status-due-today-foreground: 38 80% 10%;
+    --status-due-today-bg: 38 80% 15%;
+    
+    --status-overdue: 0 72% 55%;
+    --status-overdue-foreground: 0 0% 100%;
+    --status-overdue-bg: 0 72% 15%;
+    
+    --status-closed: 220 10% 55%;
+    --status-closed-foreground: 220 10% 10%;
+    --status-closed-bg: 220 10% 20%;
+
+    --status-partial: 262 60% 60%;
+    --status-partial-foreground: 262 60% 10%;
+    --status-partial-bg: 262 60% 15%;
+
+    --money-positive: 152 60% 50%;
+    --money-negative: 0 72% 55%;
+    --money-pending: 38 80% 55%;
+
+    --sidebar-background: 220 25% 10%;
+    --sidebar-foreground: 40 25% 90%;
+    --sidebar-primary: 175 45% 50%;
+    --sidebar-primary-foreground: 220 25% 10%;
+    --sidebar-accent: 220 20% 18%;
+    --sidebar-accent-foreground: 40 25% 90%;
+    --sidebar-border: 220 20% 20%;
+    --sidebar-ring: 175 45% 50%;
   }
 }
 
@@ -100,6 +153,38 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Monospace for currency/numbers */
+  .font-mono-numbers {
+    font-variant-numeric: tabular-nums;
+    font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Monaco, Consolas, monospace;
+  }
+}
+
+@layer utilities {
+  /* Smooth transitions for interactive elements */
+  .transition-smooth {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  /* Card hover effect */
+  .card-hover {
+    @apply transition-smooth hover:shadow-lg hover:-translate-y-0.5;
+  }
+
+  /* Glow effects for status */
+  .glow-active {
+    box-shadow: 0 0 20px -5px hsl(var(--status-active) / 0.3);
+  }
+
+  .glow-overdue {
+    box-shadow: 0 0 20px -5px hsl(var(--status-overdue) / 0.3);
+  }
+
+  .glow-due-today {
+    box-shadow: 0 0 20px -5px hsl(var(--status-due-today) / 0.3);
   }
 }
